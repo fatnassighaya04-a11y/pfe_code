@@ -1,0 +1,179 @@
+<div class="dashboard">
+
+ 
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>Tableau de bord</h1>
+      <span class="topbar-date">{{ today }}</span>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge">
+        <span class="live-dot"></span>
+        Temps réel
+      </div>
+      <button class="btn-action" (click)="refresh()" [disabled]="isLoading" [class.loading]="isLoading">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" [class.spin]="isLoading">
+          <path d="M1 7a6 6 0 1 0 12 0 6 6 0 0 0-12 0z" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M7 3v4l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        {{ isLoading ? 'Chargement...' : 'Rafraîchir' }}
+      </button>
+      <button class="btn-action" routerLink="/upload" *ngIf="canUploadDocument()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M7 9V2M4 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M1 10v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Nouveau document
+      </button>
+    </div>
+  </div>
+
+  
+  <div class="kpi-grid">
+    @for (k of kpiCards; track k.label) {
+      <div class="kpi-card" [style.--accent]="k.color">
+        <div class="kpi-top">
+          <span class="kpi-label">{{ k.label }}</span>
+          <div class="kpi-icon-wrap">
+            @if (k.icon === 'docs') {
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M9 1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6L9 1z" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M9 1v5h5" stroke="currentColor" stroke-width="1.4"/>
+              </svg>
+            }
+            @if (k.icon === 'success') {
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+            @if (k.icon === 'pending') {
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M8 5v3.5l2 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+            @if (k.icon === 'time') {
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8l3-3 2 2 4-5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M1 13.5L4 10l2.5 2.5L10 8l2 2.5L15 7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            }
+          </div>
+        </div>
+        <div class="kpi-value">{{ k.value }}</div>
+        <div class="kpi-delta" [class.up]="k.deltaUp" [class.down]="!k.deltaUp">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path [attr.d]="k.deltaUp ? 'M5 8V2M2 5l3-3 3 3' : 'M5 2v6M2 5l3 3 3-3'"
+                  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          {{ k.delta }}
+        </div>
+      </div>
+    }
+  </div>
+
+  
+  <div class="charts-row">
+    <div class="chart-panel chart-lg">
+      <div class="panel-header">
+        <div class="panel-title">Évolution mensuelle</div>
+      </div>
+      <div class="chart-body">
+        <canvas baseChart
+          [data]="lineChartData"
+          [options]="lineChartOptions"
+          type="line">
+        </canvas>
+      </div>
+    </div>
+
+    <div class="chart-panel chart-sm">
+      <div class="panel-header">
+        <div class="panel-title">Répartition par type</div>
+      </div>
+      <div class="chart-body">
+        <canvas baseChart
+          [data]="doughnutChartData"
+          [options]="doughnutChartOptions"
+          type="doughnut">
+        </canvas>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="charts-row">
+    <div class="chart-panel chart-sm">
+      <div class="panel-header">
+        <div class="panel-title">Score de confiance moyen</div>
+        <span class="panel-hint">par type de document</span>
+      </div>
+      <div class="chart-body">
+        <canvas baseChart
+          [data]="barChartData"
+          [options]="barChartOptions"
+          type="bar">
+        </canvas>
+      </div>
+    </div>
+
+    <div class="chart-panel chart-lg">
+      <div class="panel-header">
+        <div class="panel-title">Documents récents</div>
+        <a routerLink="/documents" class="panel-link">Voir tout</a>
+      </div>
+      <div class="table-wrap">
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th>Document</th>
+              <th>Type</th>
+              <th>Confiance</th>
+              <th>Statut</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (doc of recentDocuments; track doc.id) {
+              <tr>
+                <td>
+                  <div class="doc-name-cell">
+                    <div class="doc-icon">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M7 1H3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4L7 1z" stroke="currentColor" stroke-width="1.2"/>
+                        <path d="M7 1v3h3" stroke="currentColor" stroke-width="1.2"/>
+                      </svg>
+                    </div>
+                    <div>
+                      <div class="doc-filename">{{ doc.nom }}</div>
+                      <div class="doc-id">{{ doc.id | slice:0:8 }}... · {{ doc.pages || 1 }}p</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="type-pill">{{ doc.type }}</span></td>
+                <td>
+                  <div class="conf-wrap">
+                    <div class="conf-bar">
+                      <div class="conf-fill" [class]="getConfidenceClass(doc.confiance)"
+                           [style.width.%]="doc.confiance"></div>
+                    </div>
+                    <span class="conf-val" [class]="getConfidenceClass(doc.confiance)">
+                      {{ doc.confiance }}%
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <span class="status-badge" [class]="getStatusClass(doc.statut)">
+                    {{ getStatusLabel(doc.statut) }}
+                  </span>
+                </td>
+                <td class="date-cell">{{ doc.dateUpload | date:'dd/MM/yyyy' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

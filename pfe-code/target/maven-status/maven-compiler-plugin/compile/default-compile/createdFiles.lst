@@ -1,0 +1,5 @@
+com\pfe\docextraction\controller\AuthController.class
+com\pfe\docextraction\controller\ApiKeyController.class
+com\pfe\docextraction\controller\ExtractionController.class
+com\pfe\docextraction\service\auth\AuthService.class
+com\pfe\docextraction\controller\AnalyticsController.class

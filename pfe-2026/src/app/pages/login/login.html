@@ -1,0 +1,395 @@
+<div class="login-wrapper">
+  <div class="login-left">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="8" fill="#6C63FF"/>
+          <path d="M7 14h14M14 7v14" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="14" cy="14" r="4" stroke="white" stroke-width="2"/>
+        </svg>
+      </div>
+      <span class="brand-name">ExtractAI</span>
+    </div>
+
+    <div class="login-card">
+      <div class="card-header">
+        <h1>Bienvenue</h1>
+        <p>Connectez-vous à votre espace d'extraction</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <div class="alert-error" *ngIf="error">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="7" stroke="#FF6B6B" stroke-width="1.5"/>
+            <path d="M8 5v3.5M8 11h.01" stroke="#FF6B6B" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>{{ error }}
+        </div>
+
+        <div class="form-group" [class.invalid]="email?.invalid && email?.touched">
+          <label>Adresse email</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M1 6l7 4 7-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input type="email" formControlName="email" name="email" placeholder="admin@pfe.com" autocomplete="username" autocapitalize="none" spellcheck="false"/>
+          </div>
+          <span class="field-error" *ngIf="email?.invalid && email?.touched">Email invalide</span>
+        </div>
+
+        <div class="form-group" [class.invalid]="password?.invalid && password?.touched">
+          <label>Mot de passe</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input [type]="showPassword ? 'text' : 'password'" formControlName="password" name="password" placeholder="••••••••" autocomplete="current-password" autocapitalize="none" spellcheck="false"/>
+            <button type="button" class="toggle-pw" (click)="showPassword = !showPassword">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+          </div>
+          <span class="field-error" *ngIf="password?.invalid && password?.touched">Min. 4 caractères</span>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-label"><input type="checkbox"/> Se souvenir de moi</label>
+          <button type="button" class="forgot-link" (click)="openForgotModal()">Mot de passe oublié ?</button>
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="loginForm.invalid || loading">
+          <span class="spinner" *ngIf="loading"></span>
+          <span>{{ loading ? 'Connexion...' : 'Se connecter' }}</span>
+        </button>
+      </form>
+
+      <div class="register-link-wrapper">
+        <span>Pas encore de compte ?</span>
+        <button type="button" class="register-link-btn" (click)="openRegisterModal()">Demander un accès</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" *ngIf="showRegisterModal" (click)="closeRegisterModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+    
+    <div class="register-success" *ngIf="registerSuccess">
+      <div class="waiting-icon">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
+          <circle cx="28" cy="28" r="26" stroke="#6C63FF" stroke-width="2" stroke-dasharray="4 4"/>
+          <path d="M20 28l6 6 10-12" stroke="#00D4A1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3>Demande envoyée avec succès !</h3>
+      <p>Votre compte est en attente d'approbation.<br>
+         Vous recevrez un email à <strong>{{ registerForm.get('email')?.value }}</strong> une fois votre accès activé.</p>
+      <div class="status-steps">
+        <div class="status-step done">
+          <div class="status-dot done"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <span>Demande créée</span>
+        </div>
+        <div class="status-line active"></div>
+        <div class="status-step active">
+          <div class="status-dot active"></div>
+          <span>En attente d'approbation</span>
+        </div>
+        <div class="status-line"></div>
+        <div class="status-step">
+          <div class="status-dot"></div>
+          <span>Accès activé</span>
+        </div>
+      </div>
+      <button class="btn-close-success" (click)="closeRegisterModal()">Compris, j'attends</button>
+    </div>
+
+    
+    <div *ngIf="!registerSuccess">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <circle cx="11" cy="7" r="4" stroke="#6C63FF" stroke-width="1.8"/>
+            <path d="M3 19c0-4 3.6-7 8-7s8 3 8 7" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <h2>Créer un compte</h2>
+        </div>
+        <button class="modal-close" (click)="closeRegisterModal()">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M2 2l14 14M16 2L2 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <p class="modal-subtitle">L'administrateur recevra une notification et vous répondra par email.</p>
+
+      <div class="email-preview-section">
+        <div class="email-preview-header">
+          <h3>Aperçu des emails de réponse</h3>
+          <p>Le client voit ici les deux messages possibles : approbation ou refus.</p>
+        </div>
+
+        <div class="email-preview-grid">
+          <article class="email-preview-card success">
+            <div class="preview-tag">Acceptation</div>
+            <h4>{{ approvalEmailPreview.subject }}</h4>
+            <p class="preview-line">{{ approvalEmailPreview.intro }}</p>
+            <p class="preview-line">{{ approvalEmailPreview.body }}</p>
+            <p class="preview-line preview-muted">{{ approvalEmailPreview.closing }}</p>
+          </article>
+
+          <article class="email-preview-card danger">
+            <div class="preview-tag">Rejet</div>
+            <h4>{{ rejectionEmailPreview.subject }}</h4>
+            <p class="preview-line">{{ rejectionEmailPreview.intro }}</p>
+            <p class="preview-line">{{ rejectionEmailPreview.body }}</p>
+            <p class="preview-line preview-muted">{{ rejectionEmailPreview.closing }}</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="alert-error" *ngIf="registerError">{{ registerError }}</div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onRegister()" class="register-form">
+
+        
+        <div class="form-group" [class.invalid]="rUsername?.invalid && rUsername?.touched">
+          <label>Nom d'utilisateur <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M2 14c0-3 2.7-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input type="text" formControlName="username" placeholder="Votre nom"/>
+          </div>
+          <span class="field-error" *ngIf="rUsername?.invalid && rUsername?.touched">Min. 3 caractères</span>
+        </div>
+
+        
+        <div class="form-group" [class.invalid]="rEmail?.invalid && rEmail?.touched">
+          <label>
+            Email de réception <span class="required">*</span>
+            <span class="label-hint">(pour recevoir la réponse d'acceptation)</span>
+          </label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M1 6l7 4 7-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input type="email" formControlName="email" placeholder="votre@email.com"/>
+          </div>
+          <span class="field-error" *ngIf="rEmail?.invalid && rEmail?.touched">Email invalide</span>
+        </div>
+
+        
+        <div class="form-group" [class.invalid]="rPassword?.invalid && rPassword?.touched">
+          <label>Mot de passe <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input [type]="showRegisterPassword ? 'text' : 'password'" formControlName="password" placeholder="Min. 6 caractères"/>
+            <button type="button" class="toggle-pw" (click)="showRegisterPassword = !showRegisterPassword">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+          </div>
+          <span class="field-error" *ngIf="rPassword?.invalid && rPassword?.touched">Min. 6 caractères</span>
+        </div>
+
+        
+        <div class="form-group" [class.invalid]="rConfirm?.touched && registerForm.errors?.['passwordMismatch']">
+          <label>Confirmer le mot de passe <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input [type]="showConfirmPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Répétez le mot de passe"/>
+            <button type="button" class="toggle-pw" (click)="showConfirmPassword = !showConfirmPassword">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+          </div>
+          <span class="field-error" *ngIf="rConfirm?.touched && registerForm.errors?.['passwordMismatch']">Les mots de passe ne correspondent pas</span>
+        </div>
+
+        
+        <div class="form-group">
+          <label>Type de rôle demandé <span class="required">*</span></label>
+          <div class="role-selector">
+            <label class="role-option" [class.selected]="rRole?.value === 'GESTIONNAIRE'">
+              <input type="radio" formControlName="role" value="GESTIONNAIRE"/>
+              <div class="role-content">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M6 9h6M9 6v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span>Gestionnaire</span>
+              </div>
+            </label>
+            <label class="role-option" [class.selected]="rRole?.value === 'OPERATEUR'">
+              <input type="radio" formControlName="role" value="OPERATEUR"/>
+              <div class="role-content">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M6 9l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>Opérateur</span>
+              </div>
+            </label>
+            <label class="role-option" [class.selected]="rRole?.value === 'LECTEUR'">
+              <input type="radio" formControlName="role" value="LECTEUR"/>
+              <div class="role-content">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 4h12M3 8h8M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                <span>Lecteur</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="registerForm.invalid || registerLoading">
+          <span class="spinner" *ngIf="registerLoading"></span>
+          <span>{{ registerLoading ? 'Envoi en cours...' : 'Envoyer la demande' }}</span>
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay" *ngIf="showForgotModal" (click)="closeForgotModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+
+   
+    <div class="register-success" *ngIf="forgotSuccess">
+      <div class="success-icon">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+          <circle cx="24" cy="24" r="22" stroke="#00D4A1" stroke-width="2"/>
+          <path d="M14 24l7 7 13-13" stroke="#00D4A1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3>Mot de passe modifié !</h3>
+      <p>Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.</p>
+      <button class="btn-close-success" (click)="closeForgotModal()">Se connecter</button>
+    </div>
+
+    <div *ngIf="!forgotSuccess">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <rect x="3" y="10" width="16" height="10" rx="2" stroke="#6C63FF" stroke-width="1.8"/>
+            <path d="M7 10V7a4 4 0 0 1 8 0v3" stroke="#6C63FF" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+          <h2>Mot de passe oublié</h2>
+        </div>
+        <button class="modal-close" (click)="closeForgotModal()">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 2l14 14M16 2L2 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+
+      
+      <div class="steps-indicator">
+        <div class="step" [class.active]="forgotStep >= 1" [class.done]="forgotStep > 1">
+          <div class="step-circle"><svg *ngIf="forgotStep > 1" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span *ngIf="forgotStep <= 1">1</span></div>
+          <span class="step-label">Email</span>
+        </div>
+        <div class="step-line" [class.done]="forgotStep > 1"></div>
+        <div class="step" [class.active]="forgotStep >= 2" [class.done]="forgotStep > 2">
+          <div class="step-circle"><svg *ngIf="forgotStep > 2" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span *ngIf="forgotStep <= 2">2</span></div>
+          <span class="step-label">Code</span>
+        </div>
+        <div class="step-line" [class.done]="forgotStep > 2"></div>
+        <div class="step" [class.active]="forgotStep >= 3">
+          <div class="step-circle">3</div>
+          <span class="step-label">Nouveau mdp</span>
+        </div>
+      </div>
+
+      <div class="alert-error" *ngIf="forgotError" style="margin-bottom:16px">{{ forgotError }}</div>
+
+      
+      <div *ngIf="forgotStep === 1">
+        <p class="modal-subtitle">Entrez votre adresse email pour recevoir un code de réinitialisation.</p>
+        <form [formGroup]="forgotEmailForm" (ngSubmit)="sendResetCode()">
+          <div class="form-group" [class.invalid]="fEmail?.invalid && fEmail?.touched">
+            <label>Adresse email</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M1 6l7 4 7-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="email" formControlName="email" placeholder="votre@email.com"/>
+            </div>
+            <span class="field-error" *ngIf="fEmail?.invalid && fEmail?.touched">Email invalide</span>
+          </div>
+          <button type="submit" class="btn-submit" [disabled]="forgotEmailForm.invalid || forgotLoading">
+            <span class="spinner" *ngIf="forgotLoading"></span>
+            <span>{{ forgotLoading ? 'Envoi...' : 'Envoyer le code' }}</span>
+          </button>
+        </form>
+      </div>
+
+      
+      <div *ngIf="forgotStep === 2">
+        <p class="modal-subtitle">Un code à 6 chiffres a été envoyé à <strong>{{ forgotEmail }}</strong>.</p>
+        <div class="form-group">
+          <label>Code de vérification</label>
+          <div class="input-wrapper">
+            <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="5" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 5V4a3 3 0 0 1 6 0v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" [(ngModel)]="forgotCode" placeholder="123456" maxlength="6"
+              style="letter-spacing:8px;font-size:22px;text-align:center;font-weight:700"/>
+          </div>
+        </div>
+        <div class="d-flex gap-2 mt-3">
+          <button type="button" class="btn-back" (click)="backStep()">← Retour</button>
+          <button type="button" class="btn-submit flex-1" (click)="verifyCode()" [disabled]="!forgotCode">Vérifier le code</button>
+        </div>
+        
+        <div class="resend-hint">
+          <span *ngIf="resendCountdown > 0">Renvoyer le code dans {{ resendCountdown }}s</span>
+          <span *ngIf="resendCountdown === 0">
+            Pas reçu ?
+            <button type="button" class="forgot-link" (click)="resendCode()">Renvoyer le code</button>
+          </span>
+        </div>
+      </div>
+
+      
+      <div *ngIf="forgotStep === 3">
+        <p class="modal-subtitle">Choisissez votre nouveau mot de passe.</p>
+        <form [formGroup]="resetPasswordForm" (ngSubmit)="resetPassword()">
+          <div class="form-group" [class.invalid]="fNewPassword?.invalid && fNewPassword?.touched">
+            <label>Nouveau mot de passe</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input [type]="showNewPassword ? 'text' : 'password'" formControlName="newPassword" placeholder="Min. 6 caractères"/>
+              <button type="button" class="toggle-pw" (click)="showNewPassword = !showNewPassword">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/></svg>
+              </button>
+            </div>
+            <span class="field-error" *ngIf="fNewPassword?.invalid && fNewPassword?.touched">Min. 6 caractères</span>
+          </div>
+          <div class="form-group" [class.invalid]="fConfirm?.touched && resetPasswordForm.errors?.['passwordMismatch']">
+            <label>Confirmer le mot de passe</label>
+            <div class="input-wrapper">
+              <svg class="input-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input [type]="showConfirmNewPassword ? 'text' : 'password'" formControlName="confirmPassword" placeholder="Répétez le mot de passe"/>
+              <button type="button" class="toggle-pw" (click)="showConfirmNewPassword = !showConfirmNewPassword">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 8s2.5-5 7-5 7 5 7 5-2.5 5-7 5-7-5-7-5z" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/></svg>
+              </button>
+            </div>
+            <span class="field-error" *ngIf="fConfirm?.touched && resetPasswordForm.errors?.['passwordMismatch']">Les mots de passe ne correspondent pas</span>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn-back" (click)="backStep()">← Retour</button>
+            <button type="submit" class="btn-submit flex-1" [disabled]="resetPasswordForm.invalid || forgotLoading">
+              <span class="spinner" *ngIf="forgotLoading"></span>
+              <span>{{ forgotLoading ? 'Modification...' : 'Changer le mot de passe' }}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

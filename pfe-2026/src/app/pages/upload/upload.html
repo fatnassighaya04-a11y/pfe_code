@@ -1,0 +1,171 @@
+<div class="container-fluid py-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">📄 Upload de document</h5>
+        </div>
+        <div class="card-body">
+          
+         
+          <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+            {{ errorMessage }}
+            <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+          </div>
+          
+          <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show">
+            {{ successMessage }}
+            <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+          </div>
+
+          
+          <div *ngIf="duplicateInfo" class="alert alert-warning border-warning">
+            <h6 class="alert-heading mb-2">⚠️ Document déjà uploadé</h6>
+            <p class="mb-2">Ce fichier a un contenu identique (SHA-256) à un document déjà présent :</p>
+            <ul class="mb-3 small">
+              <li><strong>Nom :</strong> {{ duplicateInfo.filename }}</li>
+              <li><strong>Uploadé le :</strong> {{ duplicateInfo.uploadedAt | date:'dd/MM/yyyy HH:mm' }}</li>
+              <li><strong>Par :</strong> {{ duplicateInfo.uploadedBy || 'Inconnu' }}</li>
+              <li><strong>Statut :</strong> {{ duplicateInfo.status }}</li>
+            </ul>
+            <button class="btn btn-sm btn-warning me-2" (click)="viewDuplicate()">
+              👁️ Voir le document existant
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" (click)="dismissDuplicate()">
+              Choisir un autre fichier
+            </button>
+          </div>
+
+          
+          <div class="upload-zone" 
+               [class.drag-over]="isDragging"
+               [class.has-file]="selectedFile"
+               (dragover)="onDragOver($event)"
+               (dragleave)="onDragLeave($event)"
+               (drop)="onDrop($event)">
+            
+            <div *ngIf="!selectedFile" class="text-center py-5">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 4v12m0 0l-3-3m3 3l3-3M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke-linecap="round"/>
+              </svg>
+              <h5 class="mt-3">Glissez-déposez votre fichier ici</h5>
+              <p class="text-muted">ou</p>
+              <label class="btn btn-primary">
+                Parcourir
+                <input type="file" hidden (change)="onFileSelected($event)" accept=".pdf,.jpg,.jpeg,.png">
+              </label>
+              <p class="text-muted small mt-3">Formats supportés: PDF, JPEG, PNG (Max 10MB)</p>
+            </div>
+
+            <div *ngIf="selectedFile && !isLoading" class="text-center py-4">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="1.5">
+                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round"/>
+              </svg>
+              <h5 class="mt-3 text-success">Fichier sélectionné</h5>
+              <p class="mb-1"><strong>{{ selectedFile.name }}</strong></p>
+              <p class="text-muted small">Taille: {{ (selectedFile.size / 1024).toFixed(2) }} KB</p>
+              <div class="mt-3">
+                <button class="btn btn-outline-danger me-2" (click)="clearFile()">
+                  Changer de fichier
+                </button>
+              </div>
+            </div>
+
+            
+            <div *ngIf="isLoading" class="text-center py-4">
+              <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Chargement...</span>
+              </div>
+              <h5>Upload en cours...</h5>
+              <div class="progress mt-3" style="height: 8px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     [style.width]="uploadProgress + '%'">
+                  {{ uploadProgress }}%
+                </div>
+              </div>
+              <button class="btn btn-outline-danger mt-3" (click)="cancel()">
+                Annuler
+              </button>
+            </div>
+          </div>
+
+          
+          <div class="mt-4" *ngIf="selectedFile && !isLoading">
+            <label class="form-label fw-semibold">Type de document</label>
+            <select class="form-select" [(ngModel)]="documentType">
+              <option *ngFor="let type of documentTypes" [value]="type">{{ type }}</option>
+            </select>
+          </div>
+
+         
+          <div class="mt-3" *ngIf="selectedFile && !isLoading">
+            <button class="btn btn-link btn-sm p-0" (click)="toggleAdvancedOptions()">
+              {{ showAdvancedOptions ? '▼ Masquer' : '▶ Afficher' }} les options avancées
+            </button>
+            
+            <div *ngIf="showAdvancedOptions" class="mt-3 p-3 bg-light rounded">
+              <div class="mb-3">
+                <label class="form-label">Langue du document</label>
+                <select class="form-select" [(ngModel)]="extractionParams.language">
+                  <option value="fr">Français</option>
+                  <option value="en">Anglais</option>
+                  <option value="es">Espagnol</option>
+                  <option value="de">Allemand</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" [(ngModel)]="extractionParams.ocrEnabled">
+                  <label class="form-check-label">
+                    Activer l'OCR avancé
+                  </label>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Seuil de confiance minimum: {{ extractionParams.confidenceThreshold }}%</label>
+                <input type="range" class="form-range" 
+                       [(ngModel)]="extractionParams.confidenceThreshold"
+                       min="0" max="100" step="5">
+              </div>
+            </div>
+          </div>
+
+         
+          <div class="mt-4 d-flex gap-2" *ngIf="selectedFile && !isLoading">
+            <button class="btn btn-success flex-grow-1" (click)="launchExtraction()">
+              🚀 Lancer l'extraction
+            </button>
+            <button class="btn btn-outline-secondary" (click)="cancel()">
+              Annuler
+            </button>
+          </div>
+
+         
+          <div class="mt-4 pt-3 border-top">
+            <div class="row text-center text-muted small">
+              <div class="col">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 8v4l3 3M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+                </svg>
+                <div>Extraction < 30s</div>
+              </div>
+              <div class="col">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <div>Export JSON/CSV</div>
+              </div>
+              <div class="col">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 15v2m-6 4h12a2 2 0 002-2v-4a2 2 0 00-2-2H6a2 2 0 00-2 2v4a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                </svg>
+                <div>Données sécurisées</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

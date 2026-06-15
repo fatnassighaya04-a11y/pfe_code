@@ -1,0 +1,283 @@
+<div class="users-container">
+  <div class="container-fluid py-4">
+
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2>👥 Gestion des utilisateurs</h2>
+      <button class="btn btn-outline-primary" (click)="refresh()">🔄 Rafraîchir</button>
+    </div>
+
+    <!-- Messages (toasts simples) -->
+    <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show">
+      {{ successMessage }}
+      <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+      ⚠️ {{ errorMessage }}
+      <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card stat-card stat-admin">
+          <div class="card-body">
+            <h6 class="card-title">Administrateur</h6>
+            <p class="card-text text-muted">Accès complet</p>
+            <h2 class="mb-0">{{ roleStats.ADMIN }}</h2>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card stat-gestionnaire">
+          <div class="card-body">
+            <h6 class="card-title">Gestionnaire</h6>
+            <p class="card-text text-muted">Gère les documents</p>
+            <h2 class="mb-0">{{ roleStats.GESTIONNAIRE }}</h2>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card stat-operateur">
+          <div class="card-body">
+            <h6 class="card-title">Opérateur</h6>
+            <p class="card-text text-muted">Traitement des documents</p>
+            <h2 class="mb-0">{{ roleStats.OPERATEUR }}</h2>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card stat-card stat-lecteur">
+          <div class="card-body">
+            <h6 class="card-title">Lecteur</h6>
+            <p class="card-text text-muted">Consultation uniquement</p>
+            <h2 class="mb-0">{{ roleStats.LECTEUR }}</h2>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Onglets -->
+    <ul class="nav nav-tabs mb-4">
+      <li class="nav-item">
+        <button class="nav-link" [class.active]="activeTab === 'active'" (click)="setTab('active')">
+          ✅ Utilisateurs actifs
+          <span class="badge bg-primary ms-2">{{ activeUsers.length }}</span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link position-relative" [class.active]="activeTab === 'pending'" (click)="setTab('pending')">
+          ⏳ En attente d'approbation
+          <span class="badge bg-danger ms-2" *ngIf="pendingCount > 0">{{ pendingCount }}</span>
+        </button>
+      </li>
+    </ul>
+
+    <!-- Recherche -->
+    <div class="mb-4">
+      <div class="input-group">
+        <span class="input-group-text">🔍</span>
+        <input type="text" class="form-control" placeholder="Rechercher un utilisateur..."
+          [(ngModel)]="searchTerm" (input)="filterUsers()"/>
+      </div>
+    </div>
+
+    <!-- Chargement -->
+    <div *ngIf="isLoading && allUsers.length === 0" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2 text-muted">Chargement des utilisateurs...</p>
+    </div>
+
+    <!-- TABLEAU UTILISATEURS ACTIFS -->
+    <div *ngIf="activeTab === 'active' && allUsers.length >= 0 && !isLoading">
+      <div *ngIf="filteredUsers.length > 0" class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>Utilisateur</th>
+              <th>Email</th>
+              <th>Rôle</th>
+              <th>Statut</th>
+              <th>Date création</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredUsers">
+              <td><div class="fw-semibold">{{ user.username }}</div></td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span class="badge" [ngClass]="getRoleClass(user.role)">
+                  {{ getRoleLabel(user.role) }}
+                </span>
+              </td>
+              <td>
+                <span class="badge status-badge"
+                  [ngClass]="user.isActive ? 'status-active' : 'status-inactive'"
+                  (click)="toggleUserStatus(user)" style="cursor:pointer;">
+                  {{ user.isActive ? 'Actif ✓' : 'Inactif ✗' }}
+                </span>
+              </td>
+              <td>{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-primary" (click)="editUser(user)">✏️ Modifier</button>
+                  <button class="btn btn-outline-danger" (click)="deleteUser(user)">🗑️ Supprimer</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="filteredUsers.length === 0" class="text-center py-5">
+        <p class="text-muted">📭 Aucun utilisateur actif trouvé</p>
+      </div>
+    </div>
+
+    <!-- COMPTES EN ATTENTE -->
+    <div *ngIf="activeTab === 'pending' && !isLoading">
+      <div class="alert alert-warning d-flex align-items-center mb-4" *ngIf="pendingUsers.length > 0">
+        <span class="me-2" style="font-size:1.3rem">⚠️</span>
+        <div>
+          <strong>{{ pendingUsers.length }} compte(s) en attente</strong> nécessitent votre approbation.
+        </div>
+      </div>
+
+      <div *ngIf="filteredUsers.length > 0" class="pending-cards">
+        <div class="pending-card" *ngFor="let user of filteredUsers">
+          <div class="pending-card-left">
+            <div class="pending-avatar">
+              {{ user.username.charAt(0).toUpperCase() }}
+            </div>
+            <div class="pending-info">
+              <div class="pending-name">{{ user.username }}</div>
+              <div class="pending-email">{{ user.email }}</div>
+              <div class="pending-meta">
+                <span class="badge" [ngClass]="getRoleClass(user.role)">{{ getRoleLabel(user.role) }}</span>
+                <span class="pending-date">
+                  🕐 {{ user.createdAt | date:'dd/MM/yyyy à HH:mm' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="pending-card-right">
+            <span class="badge bg-warning text-dark me-3">⏳ En attente</span>
+            <button class="btn btn-success btn-sm me-2" (click)="approveUser(user)">✅ Accepter</button>
+            <button class="btn btn-danger btn-sm" (click)="rejectUser(user)">❌ Rejeter</button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="filteredUsers.length === 0" class="text-center py-5">
+        <div style="font-size: 3rem">🎉</div>
+        <p class="text-muted mt-2">Aucun compte en attente d'approbation</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- MODALE D'ÉDITION -->
+  <div class="modal" [class.show]="showEditModal"
+    [style.display]="showEditModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">✏️ Modifier l'utilisateur</h5>
+          <button type="button" class="btn-close" (click)="closeModal()"></button>
+        </div>
+        <div class="modal-body" *ngIf="selectedUser">
+          <div class="mb-3">
+            <label class="form-label">Nom d'utilisateur</label>
+            <input type="text" class="form-control" [(ngModel)]="selectedUser.username" disabled/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" [(ngModel)]="selectedUser.email" disabled/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rôle</label>
+            <select class="form-select" [(ngModel)]="selectedUser.role">
+              <option value="ADMIN">Administrateur</option>
+              <option value="GESTIONNAIRE">Gestionnaire</option>
+              <option value="OPERATEUR">Opérateur</option>
+              <option value="LECTEUR">Lecteur</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Statut du compte</label>
+            <select class="form-select" [(ngModel)]="selectedUser.accountStatus">
+              <option value="ACTIVE">Actif</option>
+              <option value="INACTIVE">Inactif</option>
+              <option value="PENDING">En attente</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Annuler</button>
+          <button type="button" class="btn btn-primary" (click)="saveUserChanges()">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" *ngIf="showEditModal" (click)="closeModal()"></div>
+
+  <!-- MODALE DE CONFIRMATION PROFESSIONNELLE -->
+  <div class="modal" [class.show]="showConfirmModal" [style.display]="showConfirmModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom: none;">
+          <h5 class="modal-title">
+            <span *ngIf="confirmTitle.includes('Approuver')">✅</span>
+            <span *ngIf="confirmTitle.includes('Rejeter')">❌</span>
+            <span *ngIf="confirmTitle.includes('Supprimer')">🗑️</span>
+            <span *ngIf="confirmTitle.includes('Activation')">🔄</span>
+            <span *ngIf="confirmTitle.includes('Désactivation')">⛔</span>
+            {{ confirmTitle }}
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeConfirmModal()"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          <div class="mb-3" style="font-size: 3rem;">
+            <span *ngIf="confirmTitle.includes('Approuver')">✅</span>
+            <span *ngIf="confirmTitle.includes('Rejeter')">❌</span>
+            <span *ngIf="confirmTitle.includes('Supprimer')">🗑️</span>
+            <span *ngIf="confirmTitle.includes('Activation')">🔄</span>
+            <span *ngIf="confirmTitle.includes('Désactivation')">⛔</span>
+          </div>
+          <p class="lead mb-0">{{ confirmMessage }}</p>
+        </div>
+        <div class="modal-footer border-0 justify-content-center gap-3">
+          <button type="button" class="btn btn-secondary px-4" (click)="closeConfirmModal()">Annuler</button>
+          <button type="button" class="btn btn-primary px-4" (click)="executeConfirmAction()">Confirmer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE DE NOTIFICATION (TOAST) -->
+  <div class="modal fade" [class.show]="showNotificationModal" [style.display]="showNotificationModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content shadow-lg border-0" [ngClass]="{'border-success': notificationType === 'success', 'border-danger': notificationType === 'error'}">
+        <div class="modal-header" [ngClass]="{'bg-success text-white': notificationType === 'success', 'bg-danger text-white': notificationType === 'error'}" style="border-bottom: none;">
+          <h5 class="modal-title">
+            <span *ngIf="notificationType === 'success'">✅ Succès</span>
+            <span *ngIf="notificationType === 'error'">❌ Erreur</span>
+          </h5>
+          <button type="button" class="btn-close btn-close-white" (click)="closeNotificationModal()"></button>
+        </div>
+        <div class="modal-body text-center py-4">
+          <div class="mb-3" style="font-size: 3rem;">
+            <span *ngIf="notificationType === 'success'">🎉</span>
+            <span *ngIf="notificationType === 'error'">⚠️</span>
+          </div>
+          <h5 class="mb-2">{{ notificationTitle }}</h5>
+          <p class="mb-0 text-muted">{{ notificationMessage }}</p>
+        </div>
+        <div class="modal-footer border-0 justify-content-center">
+          <button type="button" class="btn btn-secondary px-4" (click)="closeNotificationModal()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

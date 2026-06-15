@@ -1,0 +1,39 @@
+.upload-zone {
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  
+  &:hover {
+    border-color: #6c63ff;
+    background-color: rgba(108, 99, 255, 0.02);
+  }
+  
+  &.drag-over {
+    border-color: #6c63ff;
+    background-color: rgba(108, 99, 255, 0.05);
+    transform: scale(1.01);
+  }
+  
+  &.has-file {
+    border-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.02);
+  }
+}
+
+.progress {
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  transition: width 0.3s ease;
+}
+
+.btn-link {
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}

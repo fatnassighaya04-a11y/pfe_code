@@ -1,0 +1,317 @@
+<div class="container-fluid py-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1">🔌 Intégrations API</h2>
+      <p class="text-muted mb-0">Connectez votre application à ExtractAI.</p>
+    </div>
+  </div>
+
+  
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+
+  <div *ngIf="freshlyCreatedKey" class="alert alert-warning border-warning shadow-sm mb-4">
+    <h5 class="mb-2">⚠️ Copiez cette clé maintenant — elle ne sera plus jamais affichée</h5>
+    <div class="d-flex align-items-center bg-dark text-white p-2 rounded">
+      <code class="flex-grow-1 text-warning" style="word-break: break-all;">{{ freshlyCreatedKey }}</code>
+      <button class="btn btn-sm btn-warning ms-2" (click)="copy(freshlyCreatedKey, 'Clé')">📋 Copier</button>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary mt-3" (click)="dismissFreshKey()">
+      J'ai copié, fermer
+    </button>
+  </div>
+
+
+  <div *ngIf="isLoading" class="text-center py-5 text-muted">Chargement…</div>
+
+ 
+  <div *ngIf="!isLoading && !currentKey" class="card text-center py-5">
+    <div class="card-body">
+      <h4 class="mb-3">🔑 Aucune clé API</h4>
+      <p class="text-muted mb-4">
+        Créez une clé pour permettre à votre application d'utiliser ExtractAI via l'API.
+      </p>
+      <button class="btn btn-primary btn-lg" (click)="openCreateModal()">
+        + Créer ma clé API
+      </button>
+    </div>
+  </div>
+
+  
+  <div *ngIf="!isLoading && currentKey">
+
+    
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">🌐 Vos identifiants de connexion</h5>
+      </div>
+      <div class="card-body">
+
+        
+        <div class="mb-4">
+          <label class="form-label fw-semibold">URL de base de l'API</label>
+          <div class="input-group">
+            <input type="text" class="form-control font-monospace" [value]="baseUrl" readonly>
+            <button class="btn btn-outline-primary" (click)="copy(baseUrl, 'URL')">
+              📋 Copier
+            </button>
+          </div>
+        </div>
+
+        
+        <div class="mb-4">
+          <label class="form-label fw-semibold d-flex justify-content-between">
+            <span>Aperçu de votre clé — <span class="text-muted">{{ currentKey.appName }}</span></span>
+            <span class="badge bg-secondary">🔒 Masquée</span>
+          </label>
+          <div class="input-group">
+            <span class="input-group-text bg-light">🔑</span>
+            <input type="text" class="form-control font-monospace text-muted"
+                   [value]="currentKey.keyPreview" readonly disabled
+                   style="background-color: #f8f9fa;">
+          </div>
+          <div class="alert alert-warning small mb-0 mt-2 d-flex align-items-start">
+            <span class="me-2">⚠️</span>
+            <div>
+              <strong>Ceci n'est qu'un aperçu</strong> — la vraie clé n'est affichée
+              <u>qu'une seule fois</u> juste après sa création (comme Stripe ou GitHub).
+              Si vous l'avez perdue, vous devez <strong>régénérer une nouvelle clé</strong>.
+              <br>
+              <button class="btn btn-sm btn-warning mt-2" (click)="openRegenerateModal()">
+                🔄 Régénérer la clé
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="card-footer d-flex justify-content-between align-items-center">
+        <small class="text-muted">
+          Créée le {{ currentKey.createdAt | date:'dd/MM/yyyy' }}
+          <span *ngIf="currentKey.expiresAt"> · Expire le {{ currentKey.expiresAt | date:'dd/MM/yyyy' }}</span>
+        </small>
+        <div>
+          <button class="btn btn-sm btn-outline-secondary me-2" (click)="openCreateModal()">
+            + Nouvelle clé
+          </button>
+          <button class="btn btn-sm btn-outline-danger" (click)="openRevokeModal()">
+            🗑️ Révoquer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">💻 Tester l'extraction avec cURL</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Utilisez votre clé API pour faire des requêtes depuis n'importe quel terminal
+          (Linux, macOS, Windows avec Git Bash). Pas besoin de login.
+        </p>
+
+        
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">
+              <span class="badge bg-success me-2">1</span>
+              Uploader un document
+            </h6>
+            <button class="btn btn-sm btn-outline-secondary" (click)="copy(curlUpload(), 'Commande')">
+              📋 Copier
+            </button>
+          </div>
+          <pre class="bg-dark text-light p-3 rounded mb-2 small"><code>{{ curlUpload() }}</code></pre>
+          <small class="text-muted">
+            → Remplacez <code>VOTRE_CLE_API</code> par votre clé (celle obtenue à la création).
+            <code>threshold=85</code> = seuil d'auto-validation. La réponse contient l'<code>id</code> du document.
+          </small>
+        </div>
+
+        
+        <div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="mb-0">
+              <span class="badge bg-info me-2">2</span>
+              Récupérer le résultat d'extraction
+            </h6>
+            <button class="btn btn-sm btn-outline-secondary" (click)="copy(curlGetExtraction(), 'Commande')">
+              📋 Copier
+            </button>
+          </div>
+          <pre class="bg-dark text-light p-3 rounded mb-2 small"><code>{{ curlGetExtraction() }}</code></pre>
+          <small class="text-muted">
+            → Remplacez <code>DOCUMENT_ID</code> par l'ID renvoyé à l'étape 1.
+            Vous recevez le JSON extrait par l'IA + le score de confiance.
+          </small>
+        </div>
+
+        <div class="alert alert-info mt-4 mb-0 small">
+          💡 <strong>Astuce :</strong> dès qu'une requête arrive avec votre token JWT,
+          la carte de détection ci-dessous passe au vert 🟢.
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="card shadow-sm">
+      <div class="card-header" [ngClass]="isCurrentlyUsed() ? 'bg-success text-white' : 'bg-light'">
+        <h5 class="mb-0">
+          <span *ngIf="isCurrentlyUsed()">🟢 Application externe détectée</span>
+          <span *ngIf="!isCurrentlyUsed()">⚪ Aucune activité récente</span>
+        </h5>
+      </div>
+      <div class="card-body">
+
+        <div *ngIf="isCurrentlyUsed()" class="d-flex align-items-center">
+          <div class="me-3" style="font-size: 3rem;">✅</div>
+          <div>
+            <div class="fw-semibold text-success mb-1">
+              Votre clé est actuellement utilisée par une application externe !
+            </div>
+            <small class="text-muted">
+              Dernière requête détectée : <strong>{{ lastUsedLabel() }}</strong>
+              ({{ currentKey.lastUsedAt | date:'dd/MM/yyyy HH:mm:ss' }})
+            </small>
+          </div>
+        </div>
+
+        <div *ngIf="!isCurrentlyUsed() && currentKey.lastUsedAt" class="d-flex align-items-center">
+          <div class="me-3" style="font-size: 3rem;">🕐</div>
+          <div>
+            <div class="fw-semibold mb-1">Pas d'utilisation récente</div>
+            <small class="text-muted">
+              Dernière utilisation : <strong>{{ lastUsedLabel() }}</strong>
+              ({{ currentKey.lastUsedAt | date:'dd/MM/yyyy HH:mm' }})
+            </small>
+          </div>
+        </div>
+
+        <div *ngIf="!currentKey.lastUsedAt" class="d-flex align-items-center">
+          <div class="me-3" style="font-size: 3rem;">💤</div>
+          <div>
+            <div class="fw-semibold mb-1">Jamais utilisée</div>
+            <small class="text-muted">
+              Cette clé n'a pas encore été utilisée par aucune application externe.
+              Copiez-la et intégrez-la dans votre code pour commencer.
+            </small>
+          </div>
+        </div>
+
+        <hr>
+        <small class="text-muted">
+          🔄 Cette section se rafraîchit automatiquement toutes les 10 secondes.
+          Une application est considérée "active" si elle a fait une requête dans les 5 dernières minutes.
+        </small>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+
+<div *ngIf="showRegenerateModal"
+     class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+     style="background: rgba(0,0,0,0.5); z-index: 1050;"
+     (click)="closeRegenerateModal()">
+  <div class="bg-white rounded shadow" style="max-width: 500px; width: 90%;" (click)="$event.stopPropagation()">
+    <div class="p-4">
+      <h5 class="mb-3">🔄 Régénérer cette clé ?</h5>
+      <p class="mb-2">
+        L'ancienne clé <strong>{{ currentKey?.appName }}</strong> sera <strong>immédiatement révoquée</strong>
+        et une nouvelle sera créée avec le même nom.
+      </p>
+      <div class="alert alert-warning small mb-3">
+        ⚠️ Les applications qui utilisent l'ancienne clé <strong>perdront l'accès</strong> à l'API.
+        Vous devrez leur fournir la nouvelle clé.
+      </div>
+      <p class="text-muted small mb-3">
+        La nouvelle clé sera affichée une seule fois — copiez-la immédiatement.
+      </p>
+
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-outline-secondary" (click)="closeRegenerateModal()" [disabled]="isRegenerating">
+          Annuler
+        </button>
+        <button class="btn btn-warning" (click)="confirmRegenerate()" [disabled]="isRegenerating">
+          {{ isRegenerating ? 'Régénération…' : 'Oui, régénérer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<
+<div *ngIf="showRevokeModal"
+     class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+     style="background: rgba(0,0,0,0.5); z-index: 1050;"
+     (click)="closeRevokeModal()">
+  <div class="bg-white rounded shadow" style="max-width: 500px; width: 90%;" (click)="$event.stopPropagation()">
+    <div class="p-4">
+      <h5 class="mb-3 text-danger">🗑️ Révoquer cette clé ?</h5>
+      <p class="mb-2">
+        La clé <strong>{{ currentKey?.appName }}</strong> sera <strong>immédiatement désactivée</strong>.
+      </p>
+      <div class="alert alert-danger small mb-3">
+        ⚠️ Toutes les applications qui utilisent cette clé <strong>perdront l'accès</strong>.
+        Cette action est <strong>irréversible</strong>.
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-outline-secondary" (click)="closeRevokeModal()" [disabled]="isRevoking">
+          Annuler
+        </button>
+        <button class="btn btn-danger" (click)="confirmRevoke()" [disabled]="isRevoking">
+          {{ isRevoking ? 'Révocation…' : 'Oui, révoquer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div *ngIf="showCreateModal"
+     class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+     style="background: rgba(0,0,0,0.5); z-index: 1050;"
+     (click)="closeCreateModal()">
+  <div class="bg-white rounded shadow" style="max-width: 500px; width: 90%;" (click)="$event.stopPropagation()">
+    <div class="p-4">
+      <h5 class="mb-3">🔑 Créer une clé API</h5>
+
+      <div class="mb-3">
+        <label class="form-label">Nom de votre application</label>
+        <input type="text" class="form-control" [(ngModel)]="newKeyName"
+               placeholder="Ex: Mon Backend, Application Mobile…">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Validité</label>
+        <select class="form-select" [(ngModel)]="newKeyExpiresInDays">
+          <option [ngValue]="30">30 jours</option>
+          <option [ngValue]="90">90 jours (recommandé)</option>
+          <option [ngValue]="180">6 mois</option>
+          <option [ngValue]="365">1 an</option>
+          <option [ngValue]="0">Sans expiration</option>
+        </select>
+      </div>
+
+      <div class="alert alert-info small mb-3">
+        ⚠️ La clé sera affichée une seule fois après création. Copiez-la immédiatement.
+      </div>
+
+      <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-outline-secondary" (click)="closeCreateModal()" [disabled]="isCreating">
+          Annuler
+        </button>
+        <button class="btn btn-primary" (click)="createKey()" [disabled]="isCreating">
+          {{ isCreating ? 'Création…' : 'Créer la clé' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

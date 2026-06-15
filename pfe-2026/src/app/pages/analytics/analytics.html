@@ -1,0 +1,173 @@
+<div class="analytics-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📊 Analytics & Rapports</h2>
+    <button class="btn btn-outline-primary" (click)="refresh()">
+      🔄 Rafraîchir
+    </button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-4 mb-5">
+    <div class="col-md-3">
+      <div class="card kpi-card text-center">
+        <div class="card-body">
+          <div class="kpi-icon">📄</div>
+          <h3 class="kpi-value">{{ totalTraites }}</h3>
+          <p class="kpi-label">Total traités</p>
+          <small class="text-muted">documents validés/rejetés</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card kpi-card text-center">
+        <div class="card-body">
+          <div class="kpi-icon">🤖</div>
+          <h3 class="kpi-value">{{ tauxValidationAuto }}%</h3>
+          <p class="kpi-label">Taux validation auto</p>
+          <small class="text-muted">score ≥ 70%</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card kpi-card text-center">
+        <div class="card-body">
+          <div class="kpi-icon">⏱️</div>
+          <h3 class="kpi-value">{{ tempsMoyen }}s</h3>
+          <p class="kpi-label">Temps moyen par document</p>
+          <small class="text-muted">extraction + validation</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card kpi-card text-center">
+        <div class="card-body">
+          <div class="kpi-icon">💰</div>
+          <h3 class="kpi-value">{{ economieEstimee }} TND</h3>
+          <p class="kpi-label">Économie estimée ce mois</p>
+          <small class="text-muted">basé sur 2 TND/document</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphique évolution -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="mb-0">📈 Évolution quotidienne (7 derniers jours)</h5>
+    </div>
+    <div class="card-body">
+      <div style="height: 300px;">
+        <canvas baseChart
+          *ngIf="lineChartData.datasets.length"
+          [data]="lineChartData"
+          [options]="lineChartOptions"
+          type="line">
+        </canvas>
+        <div *ngIf="isLoading" class="text-center py-5">Chargement...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Graphique précision par type -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="mb-0">🎯 Précision par type de document</h5>
+    </div>
+    <div class="card-body">
+      <div style="height: 300px;">
+        <canvas baseChart
+          *ngIf="barChartData.datasets.length"
+          [data]="barChartData"
+          [options]="barChartOptions"
+          type="bar">
+        </canvas>
+        <div *ngIf="isLoading" class="text-center py-5">Chargement...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mt-4 border-primary">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">🤖 Précision de l'IA (corrections humaines)</h5>
+      <button class="btn btn-sm btn-light" (click)="loadAiAccuracy()" [disabled]="aiAccuracyLoading">
+        🔄 Rafraîchir
+      </button>
+    </div>
+    <div class="card-body">
+
+      <div *ngIf="aiAccuracyLoading" class="text-center py-3 text-muted">Chargement…</div>
+
+      <div *ngIf="!aiAccuracyLoading && aiAccuracy">
+
+        
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <div class="card bg-success bg-opacity-10 border-success text-center p-3">
+              <div class="small text-muted">Taux de précision</div>
+              <div class="display-5 fw-bold text-success">{{ aiAccuracy.accuracyRate }}%</div>
+              <div class="small text-muted">extractions sans correction</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-warning bg-opacity-10 border-warning text-center p-3">
+              <div class="small text-muted">Total corrections</div>
+              <div class="display-5 fw-bold text-warning">{{ aiAccuracy.totalCorrections }}</div>
+              <div class="small text-muted">champs modifiés par les opérateurs</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card bg-info bg-opacity-10 border-info text-center p-3">
+              <div class="small text-muted">Types couverts</div>
+              <div class="display-5 fw-bold text-info">{{ aiAccuracyTypes.length }}</div>
+              <div class="small text-muted">catégories de documents</div>
+            </div>
+          </div>
+        </div>
+
+        
+        <div *ngIf="aiAccuracyTypes.length === 0" class="alert alert-success mb-0">
+          ✨ Excellent ! Aucune correction enregistrée — l'IA est précise.
+        </div>
+
+        <div *ngFor="let type of aiAccuracyTypes" class="mb-3">
+          <h6 class="mb-2">
+            <span class="badge bg-secondary me-2">{{ type }}</span>
+            <span class="text-muted small">
+              {{ aiAccuracy.correctionsByType[type] }} correction(s)
+            </span>
+          </h6>
+          <table class="table table-sm table-striped mb-0">
+            <thead>
+              <tr>
+                <th>Champ</th>
+                <th class="text-end">Nombre de corrections</th>
+                <th>Tendance</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of topFieldsFor(type)">
+                <td><code>{{ f.field }}</code></td>
+                <td class="text-end fw-bold">{{ f.corrections }}</td>
+                <td>
+                  <div class="progress" style="height: 8px; min-width: 100px;">
+                    <div class="progress-bar bg-danger"
+                         [style.width.%]="(f.corrections / aiAccuracy.correctionsByType[type] * 100)">
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="alert alert-info mt-3 mb-0 small">
+          💡 <strong>Comment lire ces données :</strong> plus un champ apparaît souvent ici,
+          plus l'IA se trompe sur ce champ. C'est un signal fort pour améliorer le prompt
+          envoyé à Gemini ou enrichir le contexte d'extraction.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>

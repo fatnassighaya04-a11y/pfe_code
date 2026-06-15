@@ -1,0 +1,70 @@
+<div class="container-fluid py-4">
+  <div class="page-header mb-4">
+    <div>
+      <h2>📋 Journal d'activité</h2>
+      <p class="text-muted">Historique de toutes les actions effectuées sur la plateforme</p>
+    </div>
+    <button class="btn-refresh" (click)="loadLogs()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M13.65 2.35A8 8 0 1 0 15 8h-2a6 6 0 1 1-1.05-3.36l-2.6 2.61H15V1l-1.35 1.35z"
+              stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      </svg>
+      Actualiser
+    </button>
+  </div>
+
+  
+  <div class="filters-bar mb-4">
+    <input type="text" [(ngModel)]="searchTerm" (input)="filterLogs()"
+           placeholder="Rechercher par action, utilisateur, IP..." class="filter-input" />
+    <select [(ngModel)]="selectedAction" (change)="onActionChange()" class="filter-select">
+      <option value="">Toutes les actions</option>
+      <option *ngFor="let a of actionOptions" [value]="a">{{ getActionLabel(a) }}</option>
+    </select>
+    <select [(ngModel)]="selectedResult" (change)="filterLogs()" class="filter-select">
+      <option value="">Tous les résultats</option>
+      <option value="SUCCESS">Succès</option>
+      <option value="FAILURE">Échec</option>
+    </select>
+    <button class="btn-clear" (click)="clearFilters()">Effacer les filtres</button>
+  </div>
+
+  
+  <div class="stats-row mb-4">
+    <div class="stat-chip"><span class="stat-num">{{ totalElements }}</span><span class="stat-label">Total actions</span></div>
+    <div class="stat-chip success"><span class="stat-num">{{ successCount }}</span><span class="stat-label">Succès</span></div>
+    <div class="stat-chip danger"><span class="stat-num">{{ failureCount }}</span><span class="stat-label">Échecs</span></div>
+  </div>
+
+  
+  <div class="loading-state" *ngIf="isLoading"><div class="spinner-border text-primary"></div><p>Chargement des logs...</p></div>
+
+  
+  <div class="table-card" *ngIf="!isLoading">
+    <table class="log-table">
+      <thead><tr><th>Date / Heure</th><th>Utilisateur</th><th>Action</th><th>Ressource</th><th>Résultat</th><th>Adresse IP</th><th>Détails</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let log of filteredLogs" [class.row-failure]="log.result === 'FAILURE'">
+          <td class="td-date"><span class="date-main">{{ log.createdAt | date:'dd/MM/yyyy' }}</span><span class="date-time">{{ log.createdAt | date:'HH:mm:ss' }}</span></td>
+          <td><span class="user-email" *ngIf="log.userEmail">{{ log.userEmail }}</span><span class="text-muted" *ngIf="!log.userEmail">—</span></td>
+          <td><span class="action-badge" [class]="getActionClass(log.action)">{{ getActionLabel(log.action) }}</span></td>
+          <td><span *ngIf="log.resourceType">{{ log.resourceType }}</span><small class="text-muted d-block" *ngIf="log.resourceId">{{ log.resourceId | slice:0:8 }}...</small></td>
+          <td><span class="result-badge" [class.result-success]="log.result === 'SUCCESS'" [class.result-fail]="log.result === 'FAILURE'">{{ log.result === 'SUCCESS' ? '✅ Succès' : '❌ Échec' }}</span></td>
+          <td class="td-ip">{{ log.ipAddress || '—' }}</td>
+          <td class="td-details"><span [title]="log.details || ''">{{ (log.details || '—') | slice:0:40 }}{{ (log.details && log.details.length > 40) ? '...' : '' }}</span></td>
+        </tr>
+        <tr *ngIf="filteredLogs.length === 0"><td colspan="7" class="empty-state">Aucun log trouvé</td></tr>
+      </tbody>
+    </table>
+
+    
+    <div class="pagination-bar mt-3">
+      <span class="pagination-info">Page {{ currentPage + 1 }} / {{ totalPages }} — {{ totalElements }} entrées</span>
+      <div class="pagination-btns">
+        <button [disabled]="currentPage === 0" (click)="changePage(currentPage - 1)">‹ Précédent</button>
+        <button *ngFor="let p of getPageNumbers()" [class.active]="p === currentPage" (click)="changePage(p)">{{ p + 1 }}</button>
+        <button [disabled]="currentPage >= totalPages - 1" (click)="changePage(currentPage + 1)">Suivant ›</button>
+      </div>
+    </div>
+  </div>
+</div>

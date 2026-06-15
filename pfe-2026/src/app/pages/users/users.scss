@@ -1,0 +1,162 @@
+.users-container {
+  .stat-card {
+    border: none;
+    border-radius: 12px;
+    transition: transform 0.2s;
+    
+    &:hover {
+      transform: translateY(-2px);
+    }
+    
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+  }
+  
+  .stat-admin { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+  .stat-gestionnaire { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+  .stat-operateur { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+  .stat-lecteur { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+  
+  .table-responsive {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  
+  .table {
+    margin-bottom: 0;
+    
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      border-bottom: 2px solid #dee2e6;
+    }
+    
+    td {
+      vertical-align: middle;
+    }
+  }
+  
+  .role-admin { background-color: #667eea; color: white; }
+  .role-gestionnaire { background-color: #f5576c; color: white; }
+  .role-operateur { background-color: #4facfe; color: white; }
+  .role-lecteur { background-color: #43e97b; color: white; }
+  
+  .status-active { background-color: #28a745; color: white; cursor: pointer; }
+  .status-inactive { background-color: #dc3545; color: white; cursor: pointer; }
+  
+  .btn-group {
+    gap: 5px;
+  }
+  
+  // Styles pour les modales
+  .modal {
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1050;
+    
+    &.show {
+      display: block;
+    }
+    
+    .modal-dialog {
+      margin-top: 100px;
+    }
+    
+    .modal-content {
+      border-radius: 12px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+  }
+  
+  .modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1040;
+  }
+
+  // Cartes pour les comptes en attente
+  .pending-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pending-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #1e293b;
+    border: 1px solid #f59e0b44;
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    transition: box-shadow 0.2s;
+
+    &:hover {
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+    }
+  }
+
+  .pending-card-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .pending-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6C63FF, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .pending-name {
+    font-weight: 600;
+    color: #e2e8f0;
+    font-size: 1rem;
+  }
+
+  .pending-email {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin: 2px 0 6px;
+  }
+
+  .pending-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .pending-date {
+    font-size: 0.78rem;
+    color: #64748b;
+  }
+
+  .pending-card-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+}

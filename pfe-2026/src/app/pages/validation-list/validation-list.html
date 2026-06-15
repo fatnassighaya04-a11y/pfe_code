@@ -1,0 +1,136 @@
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📋 Documents à valider</h2>
+    <button class="btn btn-outline-primary" (click)="refresh()">
+      🔄 Rafraîchir
+    </button>
+  </div>
+
+
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card text-white bg-primary cursor-pointer" (click)="filterByStatus(null)">
+        <div class="card-body">
+          <h6 class="card-title">Total documents</h6>
+          <h2 class="mb-0">{{ stats.total }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-dark bg-warning cursor-pointer" (click)="filterByStatus('PENDING')">
+        <div class="card-body">
+          <h6 class="card-title">En attente</h6>
+          <h2 class="mb-0">{{ stats.enAttente }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-success cursor-pointer" (click)="filterByStatus('VALIDATED')">
+        <div class="card-body">
+          <h6 class="card-title">Validés</h6>
+          <h2 class="mb-0">{{ stats.valides }}</h2>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card text-white bg-danger cursor-pointer" (click)="filterByStatus('REJECTED')">
+        <div class="card-body">
+          <h6 class="card-title">Rejetés</h6>
+          <h2 class="mb-0">{{ stats.rejetes }}</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="mb-4">
+    <div class="input-group">
+      <span class="input-group-text">🔍</span>
+      <input type="text" class="form-control" placeholder="Rechercher par nom, type..."
+             [(ngModel)]="searchTerm" (input)="filterDocuments()">
+    </div>
+  </div>
+
+
+  
+  <div *ngIf="isLoading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+  </div>
+
+ 
+  <div *ngIf="!isLoading && filteredDocuments.length === 0" class="text-center py-5">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#6c63ff" stroke-width="1">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+    </svg>
+    <p class="text-muted mt-3">✅ Aucun document en attente de validation</p>
+    <button class="btn btn-primary mt-2" routerLink="/upload">Uploader un document</button>
+  </div>
+
+  
+  <div *ngIf="!isLoading && filteredDocuments.length > 0" class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Document</th>
+          <th>Type</th>
+          <th>Date d'upload</th>
+          <th>Statut</th>
+          <th>Confiance</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let doc of filteredDocuments | slice: (currentPage-1)*pageSize : currentPage*pageSize">
+          <td>
+            <div class="fw-semibold">{{ doc.nom }}</div>
+            <small class="text-muted">ID: {{ doc.id | slice:0:8 }}...</small>
+          </td>
+          <td><span class="badge bg-secondary">{{ doc.type }}</span></td>
+          <td title="{{ doc.dateUpload }}">{{ doc.dateUpload | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+          <td>
+            <span class="badge" [ngClass]="getStatusClass(doc.statut)">
+              {{ getStatusLabel(doc.statut) }}
+            </span>
+          </td>
+          <td>
+            <div class="d-flex align-items-center">
+              <span class="me-2 fw-bold" [class.text-success]="doc.confiance >= 70" 
+                               [class.text-warning]="doc.confiance >= 50 && doc.confiance < 70"
+                               [class.text-danger]="doc.confiance < 50" title="Score exact: {{ doc.confiance }}%">
+                {{ doc.confiance || 0 }}%
+              </span>
+              <div class="progress" style="height: 6px; width: 80px;">
+                <div class="progress-bar" [ngClass]="getConfianceClass(doc.confiance)"
+                     [style.width]="(doc.confiance || 0) + '%'"></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-primary" (click)="viewDocument(doc.id)">
+              🔍 Valider
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+ 
+  <nav aria-label="Page navigation" class="mt-4" *ngIf="totalPages > 1">
+    <ul class="pagination justify-content-center">
+      <li class="page-item" [class.disabled]="currentPage === 1">
+        <a class="page-link" href="#" (click)="changePage(currentPage - 1); $event.preventDefault()">Précédent</a>
+      </li>
+      <li class="page-item" *ngFor="let page of [].constructor(totalPages); let i = index" 
+          [class.active]="currentPage === i+1">
+        <a class="page-link" href="#" (click)="changePage(i+1); $event.preventDefault()">{{ i+1 }}</a>
+      </li>
+      <li class="page-item" [class.disabled]="currentPage === totalPages">
+        <a class="page-link" href="#" (click)="changePage(currentPage + 1); $event.preventDefault()">Suivant</a>
+      </li>
+    </ul>
+  </nav>
+</div>

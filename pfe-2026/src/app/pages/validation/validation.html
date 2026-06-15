@@ -1,0 +1,216 @@
+<div class="container-fluid py-4">
+
+  
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex align-items-center gap-3">
+      <h2 class="mb-0">📄 Résultat d'extraction</h2>
+      <span class="score-badge"
+            [class.score-high]="confidenceScore >= 85"
+            [class.score-mid]="confidenceScore >= 70 && confidenceScore < 85"
+            [class.score-low]="confidenceScore < 70">
+        Confiance: {{ confidenceScore }}%
+      </span>
+      <span class="badge bg-success" *ngIf="isAutoValidated">🤖 Approuvé automatiquement</span>
+      <span class="badge bg-warning text-dark" *ngIf="needsManualValidation && !isApproved && !isRejected">✏️ Validation manuelle requise</span>
+      <span class="badge bg-success" *ngIf="isApproved && !isAutoValidated">✅ Approuvé manuellement</span>
+      <span class="badge bg-danger" *ngIf="isRejected">❌ Rejeté</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-primary">ID: {{ documentId | slice:0:8 }}...</span>
+      <span class="text-muted small">{{ document?.filename }}</span>
+    </div>
+  </div>
+
+  
+  <div class="text-center py-5" *ngIf="isLoading">
+    <div class="spinner-border text-primary" style="width:3rem;height:3rem"></div>
+    <p class="mt-3 text-muted">Chargement du document et des résultats IA...</p>
+  </div>
+
+  
+  <div class="auto-validation-banner success" *ngIf="isAutoValidated && !isLoading">
+    <div class="d-flex align-items-center gap-3">
+      <span style="font-size:2.5rem">🤖</span>
+      <div>
+        <div class="fw-bold fs-6">Approuvé automatiquement par l'IA</div>
+        <div class="small opacity-75">Score {{ confidenceScore }}% ≥ seuil {{ autoValidationThreshold }}% — Aucune action requise.</div>
+      </div>
+    </div>
+  </div>
+
+ 
+  <div class="auto-validation-banner warning" *ngIf="needsManualValidation && !isApproved && !isRejected && !isLoading">
+    <div class="d-flex align-items-center gap-3">
+      <span style="font-size:2.5rem">⚠️</span>
+      <div>
+        <div class="fw-bold fs-6">Validation manuelle requise</div>
+        <div class="small opacity-75">Score {{ confidenceScore }}% &lt; seuil {{ autoValidationThreshold }}% — Corrigez les champs ci-dessous.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" *ngIf="!isLoading">
+
+    
+    <div class="col-md-5 mb-4">
+      <div class="card h-100">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">📄 Aperçu du document</h5>
+          <button class="btn btn-sm btn-outline-secondary" (click)="downloadPreview()" title="Télécharger l'aperçu">💾</button>
+        </div>
+        <div class="card-body text-center p-0">
+          <div *ngIf="showPdf && pdfUrl" class="pdf-preview">
+            <iframe [src]="pdfUrl" class="pdf-frame" title="Aperçu du document"></iframe>
+          </div>
+          <div *ngIf="!showPdf" class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-2 text-muted">Chargement du document réel...</p>
+          </div>
+        </div>
+        <div class="card-footer text-muted small d-flex justify-content-between">
+          <span>{{ document?.filename }}</span>
+          <span>{{ formatSize(document?.fileSize) }}</span>
+        </div>
+      </div>
+    </div>
+
+    
+    <div class="col-md-7 mb-4">
+
+      
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">📋 Champs extraits</h5>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-info" *ngIf="hasModifications">✏️ {{ modifiedCount }} champ(s) modifié(s)</span>
+            <span class="badge bg-secondary">{{ extractedFields.length }} champs</span>
+          </div>
+        </div>
+        <div class="card-body">
+          
+          <div class="text-center py-4 text-muted" *ngIf="!extraction || extractedFields.length === 0">
+            <p>⏳ En attente des données d'extraction...</p>
+          </div>
+
+          
+          <div *ngIf="extraction && extractedFields.length > 0">
+            
+            <div *ngIf="isAutoValidated || isApproved || isRejected">
+              <div class="row">
+                <div class="col-md-6 mb-2" *ngFor="let field of extractedFields">
+                  <div class="field-card readonly">
+                    <div class="field-label">{{ field.label }}</div>
+                    <div class="field-value">{{ field.valeur }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            
+            <div *ngIf="!isAutoValidated && !isApproved && !isRejected">
+              <p class="text-muted small mb-3">💡 Score insuffisant ({{ confidenceScore }}%). Corrigez les champs si nécessaire.</p>
+              <div class="row">
+                <div class="col-md-6 mb-3" *ngFor="let field of extractedFields">
+                  <div class="field-card" [class.field-modified]="field.isModified">
+                    <label class="field-label">
+                      {{ field.label }}
+                      <span class="badge bg-warning text-dark ms-1" *ngIf="field.isModified">modifié</span>
+                    </label>
+                    <input type="text" class="field-input" [(ngModel)]="field.valeur"
+                           (ngModelChange)="onFieldChange(field)" [class.input-modified]="field.isModified"/>
+                    <div class="field-original" *ngIf="field.isModified">IA: {{ field.original }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="d-flex gap-2 mt-3" *ngIf="hasModifications">
+                <button class="btn btn-sm btn-primary" (click)="saveFieldCorrections()" [disabled]="isSaving">
+                  💾 Sauvegarder les corrections
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" (click)="resetFieldCorrections()">
+                  ↩️ Annuler
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+     
+      <div class="card mb-3">
+        <div class="card-header"><h5 class="mb-0">📜 Historique de traitement</h5></div>
+        <div class="card-body p-0">
+          <ul class="timeline-list">
+            <li class="timeline-item"><span class="timeline-dot bg-primary"></span><span class="timeline-text">📤 Document uploadé</span></li>
+            <li class="timeline-item"><span class="timeline-dot bg-info"></span><span class="timeline-text">🤖 Extraction IA lancée</span></li>
+            <li class="timeline-item" *ngIf="extraction"><span class="timeline-dot bg-success"></span><span class="timeline-text">✨ Extraction terminée — {{ extractedFields.length }} champs</span></li>
+            <li class="timeline-item" *ngIf="isAutoValidated"><span class="timeline-dot bg-success"></span><span class="timeline-text">🤖 Approuvé automatiquement — score {{ confidenceScore }}%</span></li>
+            <li class="timeline-item" *ngIf="needsManualValidation && !isApproved && !isRejected"><span class="timeline-dot bg-warning"></span><span class="timeline-text">⚠️ En attente de validation manuelle</span></li>
+            <li class="timeline-item" *ngIf="isApproved && !isAutoValidated"><span class="timeline-dot bg-success"></span><span class="timeline-text">✅ Approuvé manuellement</span></li>
+            <li class="timeline-item" *ngIf="isRejected"><span class="timeline-dot bg-danger"></span><span class="timeline-text">❌ Rejeté — {{ selectedRejectionReason }}</span></li>
+          </ul>
+        </div>
+      </div>
+
+      
+      <div class="card mb-3" *ngIf="!isAutoValidated && !isApproved && !isRejected">
+        <div class="card-header bg-danger text-white"><h5 class="mb-0">❌ Motif de rejet (si applicable)</h5></div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Cause du rejet <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="selectedRejectionReason">
+              <option value="" disabled>-- Sélectionnez un motif --</option>
+              <option *ngFor="let r of rejectionReasons" [value]="r.value">{{ r.label }}</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">💬 Commentaire supplémentaire</label>
+            <textarea class="form-control" rows="2" [(ngModel)]="comment" placeholder="Précisez ici si nécessaire..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      
+      <div class="actions-bar" *ngIf="!isAutoValidated && !isApproved && !isRejected">
+        <button class="btn btn-success btn-action" (click)="approuver()" [disabled]="isSaving || !extractionId">✅ Approuver</button>
+        <button class="btn btn-danger btn-action" (click)="rejeter()" [disabled]="isSaving || !extractionId">❌ Rejeter</button>
+        <button class="btn btn-outline-primary btn-action" (click)="exporterJSON()">📄 JSON</button>
+        <button class="btn btn-outline-secondary btn-action" (click)="exporterCSV()">📊 CSV</button>
+      </div>
+      <div class="actions-bar" *ngIf="isAutoValidated || isApproved || isRejected">
+        <button class="btn btn-outline-primary btn-action" (click)="exporterJSON()">📄 Exporter JSON</button>
+        <button class="btn btn-outline-secondary btn-action" (click)="exporterCSV()">📊 Exporter CSV</button>
+        <button class="btn btn-primary btn-action" (click)="goToDocuments()">📚 Documents</button>
+        <button class="btn btn-outline-secondary btn-action" (click)="resetAndContinue()">🔄 Nouvel upload</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-backdrop-custom" *ngIf="showConfirmModal" (click)="closeConfirmModal()">
+  <div class="modal-card-custom" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom" [class.header-approve]="confirmTitle.includes('Approbation')" [class.header-reject]="confirmTitle.includes('Rejet')">
+      <span style="font-size:1.4rem">{{ confirmTitle.includes('Approbation') ? '✅' : '❌' }}</span>
+      <h5 class="mb-0 ms-2">{{ confirmTitle }}</h5>
+      <button class="btn-close-custom" (click)="closeConfirmModal()">✕</button>
+    </div>
+    <div class="modal-body-custom"><p style="white-space: pre-line;">{{ confirmMessage }}</p></div>
+    <div class="modal-footer-custom">
+      <button class="btn btn-secondary" (click)="closeConfirmModal()">Annuler</button>
+      <button class="btn" [class.btn-success]="confirmTitle.includes('Approbation')" [class.btn-danger]="confirmTitle.includes('Rejet')" (click)="executeConfirmAction()">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop-custom" *ngIf="showNotificationModal" (click)="closeNotificationModal()">
+  <div class="modal-card-custom" style="max-width:380px" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom" [class.header-approve]="notificationType === 'success'" [class.header-reject]="notificationType === 'error'" [class.header-info]="notificationType === 'info'">
+      <span style="font-size:1.4rem">{{ notificationType === 'success' ? '✅' : notificationType === 'error' ? '❌' : 'ℹ️' }}</span>
+      <h5 class="mb-0 ms-2">{{ notificationTitle }}</h5>
+      <button class="btn-close-custom" (click)="closeNotificationModal()">✕</button>
+    </div>
+    <div class="modal-body-custom text-center"><p class="text-muted mb-0">{{ notificationMessage }}</p></div>
+    <div class="modal-footer-custom justify-content-center"><button class="btn btn-secondary" (click)="closeNotificationModal()">Fermer</button></div>
+  </div>
+</div>
